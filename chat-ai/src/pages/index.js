@@ -1,6 +1,7 @@
 import Head from "next/head";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown"
+import { createParser } from "eventsource-parser";
 
 const SYSTEM_MSG = "You are a helpful and versatile 100X AI created by Sangwan";
 const API_URL = "https://api.openai.com/v1/chat/completions"
@@ -30,17 +31,51 @@ export default function Main() {
         body: JSON.stringify({
           model: "gpt-3.5-turbo",
           messages: updatedMsg,
+          stream: true,
         }),
       });
-      const respJson = await response.json();
-      // console.log(respJson);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error.message);
+      }
+      const reader = response.body.getReader();
 
-      setMessages([...updatedMsg, respJson.choices[0].message]);
+      let newMsg = "";
+      const parser = createParser((event) => {
+        if (event.type === "event") {
+          const data = event.data;
+          if (data === "[DONE]") {
+            return;
+          }
+          const json = JSON.parse(event.data);
+          const content = json.choices[0].delta.content;
+
+          if (!content) {
+            return;
+          }
+          newMsg += content;
+
+          setMessages([
+            ...updatedMsg,
+            { role: 'assistant', content: newMsg },
+          ]);
+        } else {
+          return "";
+        }
+      });
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = new TextDecoder().decode(value);
+        parser.feed(text);
+      }
     } catch (error) {
-      console.error("error");
-      window.alert("Error: " + error.meassage)
+      console.error(error);
+      window.alert("Error: Invalid API key");
     }
   }
+
 
   return (
     <>
@@ -49,7 +84,7 @@ export default function Main() {
       <div className="flex flex-col h-screen ">
         {/* Nav bar */}
         <nav className="shadow px-4 py-2 flex flex-row justify-between items-center bg-white">
-          <div className="text-2xl font-bold">Title</div>
+          <div className="text-2xl font-bold">100 X Devs</div>
           <div className="">
             <input type="password"
               className="border p-1 rounded"
@@ -81,9 +116,15 @@ export default function Main() {
             <textarea
               value={userMsg}
               onChange={(e) => setUserMsg(e.target.value)}
-              className="Border text-lg ronded-md p-1 flex-1 bg-gray-100" 
-              rows={1} 
-              placeholder="Heyy how you doin......"/>
+              className="Border text-lg ronded-md p-1 flex-1 bg-gray-100"
+              rows={1}
+              placeholder="Heyy how you doin......"
+              onKeyDown={(event) => {
+                if(event.key === 'Enter' && !event.shiftKey) {
+                  sendReq();
+                }
+              }}
+              />
 
             {/* Send Button */}
             <button
