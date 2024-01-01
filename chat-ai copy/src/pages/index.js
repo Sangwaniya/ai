@@ -17,11 +17,11 @@ export default function Main() {
   ]);
 
   const firstcall = () => {
-    setUserMsg(`Language: ${lang}, Difficulty level: ${difficulty}`);
-    sendReq();
-  };
+    const newMsg = `Language: ${lang}, Difficulty level: ${difficulty}`;
+    sendReq(newMsg);
+};
 
-  async function sendReq() {
+async function sendReq(userMsg) {
     const updatedMsg = [
       ...messages,
       { role: "user", content: userMsg },
@@ -111,6 +111,11 @@ export default function Main() {
               className="Border text-lg ronded-md p-1 flex-1 bg-gray-100 mt-8"
               rows={1}
               placeholder="Give me a topic to test your knowledge......"
+              style={{
+                resize: 'none',
+                overflowY: 'hidden',
+                width: '50%',
+              }}
             />
             <select
               value={difficulty}
@@ -155,14 +160,14 @@ export default function Main() {
               placeholder="Heyy how you doin......"
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
-                  sendReq();
+                  sendReq(userMsg);
                 }
               }}
             />
 
             {/* Send Button */}
             <button
-              onClick={sendReq}
+              onClick={() => sendReq(userMsg)}
               className="bg-blue-500 hover:bg-blue-600 border rounded-md text-white text-lg w-22 p-2 ml-2">
               Send Ans🚀
             </button>
