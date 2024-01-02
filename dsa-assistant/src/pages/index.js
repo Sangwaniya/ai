@@ -1,16 +1,25 @@
-import {useState} from "react";
+import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { createParser } from "eventsource-parser";
+
+const SYS_MSG = "You are a virtual evaluator coding questions. Given a question, some code written by a student, and the programming language, your job is to determine whether the code correctly solves the question. If it's correct, simply reply \"CORRECT\". If it is incorrect, reply \"INCORRECT\" and in the next few lines, explain why the code is incorrect using bullet points without giving away the answer. Keep your explanations short.";
 
 export default function Home() {
-  const [result, setResult] = useState("");
+  const [userMsg, setUserMsg] = useState("");
   const [problem, setProblem] = useState("");
   const [code, setCode] = useState("");
   const [key, setKey] = useState("");
-  const [userMsg, setUserMsg] = useState("");
   const [messages, setMessages] = useState([
-    { role: "system", content: SYSTEM_MSG },
+    { role: "system", content: SYS_MSG },
   ]);
 
-  async function sendReq() {
+  const firstcall = () => {
+    const newMsg = `QUESTION: {{problem}}
+    STUDENT'S CODE: {{code}}`;
+    sendReq(newMsg);
+  };
+
+  async function sendReq(userMsg) {
     const updatedMsg = [
       ...messages,
       { role: "user", content: userMsg },
@@ -84,15 +93,57 @@ export default function Home() {
           solution and get instant feedback on what is going wrong.
         </div>
         <div className="">
-            <input type="password"
-              className="border p-1 rounded mt-5"
-              onChange={(e) => setKey(e.target.value)}
-              value={key}
-              placeholder="API Key here" />
-          </div>
+          <input type="password"
+            className="border p-1 rounded mt-5"
+            onChange={(e) => setKey(e.target.value)}
+            value={key}
+            placeholder="API Key here" />
+        </div>
       </div>
 
-      <div className="max-w-4xl w-full mx-auto px-4">
+      {/* Message History */}
+      {messages.length > 1 && (<>
+        <div className="flex-1 overflow-y-scroll">
+          <div className="w-full max-w-screen-md mx-auto p-4">
+            {messages
+              .filter((msg) => msg.role !== "system")
+              .map((msg, idx) => (
+                <div key={idx} className="mt-3">
+                  <div className="font-bold">
+                    {msg.role === "user" ? "You 🤔" : "AI 😏"}
+                  </div>
+                  <div className="text-lg prose"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
+                </div>
+              ))}
+          </div>
+        </div>
+
+        <div className="">
+          <div className="w-full max-w-screen-md mx-auto flex px-4 pb-4 p-3">
+            <textarea
+              value={userMsg}
+              onChange={(e) => setUserMsg(e.target.value)}
+              className="Border text-lg ronded-md p-1 flex-1 bg-gray-100"
+              rows={1}
+              placeholder="Still any doubts......"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  sendReq(userMsg);
+                }
+              }}
+            />
+
+            {/* Send Button */}
+            <button
+              onClick={() => sendReq(userMsg)}
+              className="bg-blue-500 hover:bg-blue-600 border rounded-md text-white text-lg w-22 p-2 ml-2">
+              Ask 🚀
+            </button>
+          </div>
+        </div>
+      </>)}
+
+      {messages.length <= 1 && (<><div className="max-w-4xl w-full mx-auto px-4">
         <div className="flex flex-col mb-4">
           <label className="font-medium">Problem Statement</label>
           <textarea
@@ -116,19 +167,11 @@ export default function Home() {
         </div>
 
         <button
-          onClick={sendReq}
+          onClick={firstcall}
           className="w-20 border border-blue-600 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded p-2 font-medium"
-        >
-          Submit
-        </button>
+        >Find Error</button>
       </div>
-
-      {result && (
-        <div className="max-w-4xl w-full mx-auto p-4 flex flex-col">
-          <label className="font-medium">Assessment</label>
-          <div className="text-lg whitespace-pre-wrap ">{result}</div>
-        </div>
-      )}
+      </>)}
     </div>
   );
 }
