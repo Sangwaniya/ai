@@ -14,8 +14,8 @@ export default function Home() {
   ]);
 
   const firstcall = () => {
-    const newMsg = `QUESTION: {{problem}}
-    STUDENT'S CODE: {{code}}`;
+    const newMsg = `QUESTION: ${problem}
+    CODE: ${code}`;
     sendReq(newMsg);
   };
 
