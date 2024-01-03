@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import { createParser } from "eventsource-parser";
 
 const SYS_MSG = "You are a virtual evaluator coding questions. Given a question, some code written by a student, and the programming language, your job is to determine whether the code correctly solves the question. If it's correct, simply reply \"CORRECT\". If it is incorrect, reply \"INCORRECT\" and in the next few lines, explain why the code is incorrect using bullet points without giving away the answer. Keep your explanations short.";
-
+const API_URL = "https://api.openai.com/v1/chat/completions"
 export default function Home() {
   const [userMsg, setUserMsg] = useState("");
   const [problem, setProblem] = useState("");
